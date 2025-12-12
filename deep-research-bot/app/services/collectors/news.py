@@ -178,3 +178,4 @@ class NewsCollector(BaseCollector):
         except Exception as e:
             print(f"기사 본문 가져오기 실패: {e}")
             return ""
+

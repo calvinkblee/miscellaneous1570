@@ -132,3 +132,4 @@ class AIAnalyzer:
 
 # Singleton instance
 analyzer = AIAnalyzer()
+

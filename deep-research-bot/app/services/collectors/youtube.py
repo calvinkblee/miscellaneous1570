@@ -129,3 +129,4 @@ class YouTubeCollector(BaseCollector):
         except Exception as e:
             print(f"트랜스크립트 가져오기 실패: {e}")
             return ""
+

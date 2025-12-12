@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML to PDF 변환기</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+      color: white;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 20px;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.3s ease;
+    }
+
+    .tab:hover {
+      background: #e0e0e0;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .drop-zone {
+      border: 3px dashed #ccc;
+      border-radius: 12px;
+      padding: 60px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #fafafa;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .drop-zone .icon {
+      font-size: 4rem;
+      margin-bottom: 15px;
+    }
+
+    .drop-zone p {
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .drop-zone .sub {
+      font-size: 0.9rem;
+      color: #999;
+      margin-top: 8px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .input-group input[type="text"],
+    .input-group textarea {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+
+    .input-group input:focus,
+    .input-group textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .input-group textarea {
+      min-height: 200px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.9rem;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 12px;
+    }
+
+    .option {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .option label {
+      font-size: 0.9rem;
+      color: #666;
+      font-weight: 500;
+    }
+
+    .option select,
+    .option input {
+      padding: 10px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .option select:focus,
+    .option input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .checkbox-option {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-option input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      display: none;
+    }
+
+    .status.loading {
+      display: block;
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status.success {
+      display: block;
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status.error {
+      display: block;
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .file-info {
+      margin-top: 16px;
+      padding: 12px;
+      background: #e8f5e9;
+      border-radius: 8px;
+      color: #2e7d32;
+      display: none;
+    }
+
+    .file-info.show {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .file-info .name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .file-info .remove {
+      background: none;
+      border: none;
+      color: #c62828;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      color: rgba(255,255,255,0.8);
+      font-size: 0.9rem;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0,0,0,0.1);
+      border-top-color: #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📄 HTML to PDF 변환기</h1>
+      <p>배경색을 완벽하게 유지하며 PDF로 변환합니다</p>
+    </header>
+
+    <div class="card">
+      <div class="tabs">
+        <button class="tab active" data-tab="upload">📁 파일 업로드</button>
+        <button class="tab" data-tab="url">🔗 URL 변환</button>
+        <button class="tab" data-tab="html">✏️ HTML 직접 입력</button>
+      </div>
+
+      <!-- 파일 업로드 탭 -->
+      <div class="tab-content active" id="upload-tab">
+        <div class="drop-zone" id="dropZone">
+          <div class="icon">📄</div>
+          <p>HTML 파일을 드래그하거나 클릭하여 선택</p>
+          <p class="sub">지원: .html, .htm 파일</p>
+        </div>
+        <input type="file" id="fileInput" accept=".html,.htm">
+        <div class="file-info" id="fileInfo">
+          <span class="name" id="fileName"></span>
+          <button class="remove" id="removeFile">✕</button>
+        </div>
+      </div>
+
+      <!-- URL 변환 탭 -->
+      <div class="tab-content" id="url-tab">
+        <div class="input-group">
+          <label for="urlInput">웹 페이지 URL</label>
+          <input type="text" id="urlInput" placeholder="https://example.com">
+        </div>
+      </div>
+
+      <!-- HTML 직접 입력 탭 -->
+      <div class="tab-content" id="html-tab">
+        <div class="input-group">
+          <label for="htmlInput">HTML 코드</label>
+          <textarea id="htmlInput" placeholder="<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background-color: #f0f0f0; }
+    .box { background: #3498db; color: white; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class='box'>배경색이 유지됩니다!</div>
+</body>
+</html>"></textarea>
+        </div>
+      </div>
+
+      <!-- 변환 옵션 -->
+      <div class="options">
+        <div class="option">
+          <label>페이지 크기</label>
+          <select id="format">
+            <option value="A4">A4</option>
+            <option value="A3">A3</option>
+            <option value="A5">A5</option>
+            <option value="Letter">Letter</option>
+            <option value="Legal">Legal</option>
+            <option value="Tabloid">Tabloid</option>
+          </select>
+        </div>
+        <div class="option">
+          <label>여백</label>
+          <select id="margin">
+            <option value="0">없음</option>
+            <option value="5mm">5mm</option>
+            <option value="10mm" selected>10mm</option>
+            <option value="15mm">15mm</option>
+            <option value="20mm">20mm</option>
+            <option value="25mm">25mm</option>
+          </select>
+        </div>
+        <div class="option">
+          <label>스케일</label>
+          <input type="number" id="scale" value="1" min="0.1" max="2" step="0.1">
+        </div>
+        <div class="option checkbox-option">
+          <input type="checkbox" id="landscape">
+          <label for="landscape">가로 모드</label>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="convertBtn">
+        🚀 PDF로 변환
+      </button>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <footer>
+      <p>💡 Puppeteer 기반 - 브라우저 렌더링과 동일한 결과물</p>
+    </footer>
+  </div>
+
+  <script>
+    // 탭 전환
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    let currentTab = 'upload';
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.classList.remove('active'));
+        
+        tab.classList.add('active');
+        currentTab = tab.dataset.tab;
+        document.getElementById(`${currentTab}-tab`).classList.add('active');
+      });
+    });
+
+    // 파일 드래그 앤 드롭
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    let selectedFile = null;
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function handleFile(file) {
+      if (!file.name.match(/\.(html|htm)$/i)) {
+        showStatus('HTML 파일만 업로드 가능합니다.', 'error');
+        return;
+      }
+      selectedFile = file;
+      fileName.textContent = file.name;
+      fileInfo.classList.add('show');
+    }
+
+    document.getElementById('removeFile').addEventListener('click', () => {
+      selectedFile = null;
+      fileInfo.classList.remove('show');
+      fileInput.value = '';
+    });
+
+    // 변환 버튼
+    const convertBtn = document.getElementById('convertBtn');
+    const status = document.getElementById('status');
+
+    function showStatus(message, type) {
+      status.className = `status ${type}`;
+      status.innerHTML = type === 'loading' 
+        ? `<span class="spinner"></span>${message}`
+        : message;
+    }
+
+    function getOptions() {
+      return {
+        format: document.getElementById('format').value,
+        landscape: document.getElementById('landscape').checked,
+        margin: document.getElementById('margin').value,
+        scale: parseFloat(document.getElementById('scale').value)
+      };
+    }
+
+    convertBtn.addEventListener('click', async () => {
+      try {
+        convertBtn.disabled = true;
+        showStatus('PDF 변환 중...', 'loading');
+
+        let response;
+        const options = getOptions();
+
+        if (currentTab === 'upload') {
+          if (!selectedFile) {
+            showStatus('파일을 선택해주세요.', 'error');
+            convertBtn.disabled = false;
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          formData.append('format', options.format);
+          formData.append('landscape', options.landscape);
+          formData.append('margin', options.margin);
+          formData.append('scale', options.scale);
+
+          response = await fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+          });
+
+        } else if (currentTab === 'url') {
+          const url = document.getElementById('urlInput').value.trim();
+          if (!url) {
+            showStatus('URL을 입력해주세요.', 'error');
+            convertBtn.disabled = false;
+            return;
+          }
+
+          response = await fetch('/api/url', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, options })
+          });
+
+        } else if (currentTab === 'html') {
+          const html = document.getElementById('htmlInput').value.trim();
+          if (!html) {
+            showStatus('HTML을 입력해주세요.', 'error');
+            convertBtn.disabled = false;
+            return;
+          }
+
+          response = await fetch('/api/convert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ html, options })
+          });
+        }
+
+        if (!response.ok) {
+          let errorMessage = '변환 실패';
+          try {
+            const text = await response.text();
+            const error = JSON.parse(text);
+            errorMessage = error.error || errorMessage;
+          } catch (e) {
+            errorMessage = `서버 오류 (${response.status})`;
+          }
+          throw new Error(errorMessage);
+        }
+
+        // PDF 다운로드
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        
+        // 파일명 추출
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'document.pdf';
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="?(.+?)"?$/);
+          if (match) {
+            filename = decodeURIComponent(match[1]);
+          }
+        }
+        
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(downloadUrl);
+
+        showStatus('✅ PDF 변환 완료! 다운로드가 시작됩니다.', 'success');
+
+      } catch (error) {
+        showStatus(`❌ 오류: ${error.message}`, 'error');
+      } finally {
+        convertBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
+

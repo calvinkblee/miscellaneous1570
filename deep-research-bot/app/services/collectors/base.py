@@ -49,3 +49,4 @@ class BaseCollector(ABC):
         if not text:
             return ""
         return " ".join(text.split())
+

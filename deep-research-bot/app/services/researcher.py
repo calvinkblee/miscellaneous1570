@@ -198,3 +198,4 @@ class DeepResearcher:
 
 # Singleton instance
 researcher = DeepResearcher()
+

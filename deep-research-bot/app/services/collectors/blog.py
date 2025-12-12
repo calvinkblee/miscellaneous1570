@@ -163,3 +163,4 @@ class BlogCollector(BaseCollector):
                 return img["src"]
         
         return ""
+

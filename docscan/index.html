@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocScan Pro - HTML 문서 자동 분석</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <span class="logo-icon">📄</span>
+                    <h1>DocScan <span class="pro-badge">Pro</span></h1>
+                </div>
+            </div>
+
+            <!-- API Key -->
+            <!-- API Key는 .env.local에서 관리됩니다 -->
+
+            <!-- Upload -->
+            <div class="sidebar-section">
+                <label class="section-label">문서 업로드</label>
+                <div class="dropzone-mini" id="dropzone">
+                    <span>📁 드래그 또는 클릭</span>
+                    <input type="file" id="fileInput" multiple accept=".html,.htm" webkitdirectory>
+                </div>
+                <div class="upload-buttons">
+                    <button id="selectFiles" class="btn btn-sm">📄 파일</button>
+                    <button id="selectFolder" class="btn btn-sm">📁 폴더</button>
+                </div>
+            </div>
+
+            <!-- Collections (Auto-grouped) -->
+            <div class="sidebar-section">
+                <label class="section-label">📚 스마트 컬렉션</label>
+                <div class="collection-list" id="collectionList">
+                    <div class="collection-item active" data-collection="all">
+                        <span>📋 전체 문서</span>
+                        <span class="collection-count" id="totalCount">0</span>
+                    </div>
+                    <div class="collection-item" data-collection="favorites">
+                        <span>⭐ 즐겨찾기</span>
+                        <span class="collection-count" id="favCount">0</span>
+                    </div>
+                </div>
+                <div class="auto-collections" id="autoCollections"></div>
+            </div>
+
+            <!-- Tags -->
+            <div class="sidebar-section">
+                <label class="section-label">🏷️ 태그</label>
+                <div class="tag-cloud" id="tagCloud"></div>
+            </div>
+
+            <!-- Theme Toggle -->
+            <div class="sidebar-footer">
+                <button id="themeToggle" class="btn btn-icon-text">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText">다크 모드</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" placeholder="문서 검색...">
+                </div>
+                <div class="view-controls">
+                    <div class="view-toggle">
+                        <button class="view-btn active" data-view="card" title="카드 뷰">📇</button>
+                        <button class="view-btn" data-view="table" title="테이블 뷰">📋</button>
+                        <button class="view-btn" data-view="graph" title="관계도 뷰">🗺️</button>
+                        <button class="view-btn" data-view="timeline" title="타임라인 뷰">📅</button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="compareBtn" class="btn btn-primary">⚖️ 비교</button>
+                        <button id="statsBtn" class="btn btn-secondary">📊 통계</button>
+                        <button id="exportBtn" class="btn btn-secondary">📥 내보내기</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Progress Bar -->
+            <div class="progress-bar-container" id="progressSection" hidden>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">분석 중...</p>
+            </div>
+
+            <!-- Stats Panel -->
+            <div class="stats-panel" id="statsPanel" hidden>
+                <div class="stats-header">
+                    <h3>📊 문서 분석 통계</h3>
+                    <button class="btn-close" id="closeStats">×</button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">전체 문서</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statCollections">0</div>
+                        <div class="stat-label">컬렉션</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statTags">0</div>
+                        <div class="stat-label">태그</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="statDuplicates">0</div>
+                        <div class="stat-label">유사 문서</div>
+                    </div>
+                </div>
+                <div class="stats-section">
+                    <h4>🔑 주요 키워드</h4>
+                    <div class="keyword-bars" id="keywordBars"></div>
+                </div>
+                <div class="stats-section">
+                    <h4>📁 컬렉션 분포</h4>
+                    <div class="collection-chart" id="collectionChart"></div>
+                </div>
+            </div>
+
+            <!-- Document Views -->
+            <div class="content-area">
+                <!-- Card View -->
+                <div class="doc-grid" id="cardView"></div>
+                
+                <!-- Table View -->
+                <div class="doc-table-container" id="tableView" hidden>
+                    <table class="doc-table">
+                        <thead>
+                            <tr>
+                                <th class="sortable" data-sort="title">제목 ↕</th>
+                                <th class="sortable" data-sort="collection">컬렉션 ↕</th>
+                                <th class="sortable" data-sort="tags">태그</th>
+                                <th class="sortable" data-sort="similarity">유사도 ↕</th>
+                                <th>액션</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Graph View -->
+                <div class="graph-container" id="graphView" hidden>
+                    <canvas id="graphCanvas"></canvas>
+                    <div class="graph-legend" id="graphLegend"></div>
+                </div>
+
+                <!-- Timeline View -->
+                <div class="timeline-container" id="timelineView" hidden>
+                    <div class="timeline" id="timeline"></div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Chat Panel -->
+        <aside class="chat-panel" id="chatPanel">
+            <div class="chat-header">
+                <h3>💬 문서에 질문하기</h3>
+                <button id="toggleChat" class="btn-icon">◀</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-message system">
+                    <p>안녕하세요! 업로드된 문서에 대해 질문해주세요.</p>
+                    <p class="hint">예: "우리 회사 ARR 목표가 뭐야?", "주요 경쟁사는?"</p>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <textarea id="chatInput" placeholder="질문을 입력하세요..." rows="2"></textarea>
+                <button id="sendChat" class="btn btn-primary">전송</button>
+            </div>
+        </aside>
+
+        <!-- Chat Toggle Button (when collapsed) -->
+        <button class="chat-toggle-btn" id="chatToggleBtn" hidden>
+            💬
+        </button>
+    </div>
+
+    <!-- Document Detail Modal -->
+    <div class="modal" id="detailModal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-large">
+            <button class="modal-close" id="modalClose">×</button>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="exportModalClose">×</button>
+            <div class="modal-body">
+                <h2>📥 내보내기</h2>
+                <p class="modal-desc">원하는 형식을 선택하세요</p>
+                <div class="export-options">
+                    <button class="export-option" data-format="json">
+                        <span class="export-icon">📄</span>
+                        <span class="export-name">JSON</span>
+                        <span class="export-desc">구조화된 데이터</span>
+                    </button>
+                    <button class="export-option" data-format="csv">
+                        <span class="export-icon">📊</span>
+                        <span class="export-name">CSV</span>
+                        <span class="export-desc">엑셀 호환</span>
+                    </button>
+                    <button class="export-option" data-format="notion">
+                        <span class="export-icon">📝</span>
+                        <span class="export-name">Notion</span>
+                        <span class="export-desc">노션 데이터베이스</span>
+                    </button>
+                    <button class="export-option" data-format="obsidian">
+                        <span class="export-icon">💎</span>
+                        <span class="export-name">Obsidian</span>
+                        <span class="export-desc">마크다운 + 링크</span>
+                    </button>
+                    <button class="export-option" data-format="markdown">
+                        <span class="export-icon">📋</span>
+                        <span class="export-name">Markdown</span>
+                        <span class="export-desc">목차 형태</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Similar Documents Modal -->
+    <div class="modal" id="similarModal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <button class="modal-close" id="similarModalClose">×</button>
+            <div class="modal-body" id="similarModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Compare Modal -->
+    <div class="modal" id="compareModal" hidden>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-xl">
+            <button class="modal-close" id="compareModalClose">×</button>
+            <div class="modal-body">
+                <h2>⚖️ 문서 비교 (차이점 중심)</h2>
+                <p class="modal-desc">파일 자체에서 추출된 정보만으로 비교합니다. <strong style="color: var(--danger);">빨간색</strong>은 해당 문서에만 있는 항목입니다.</p>
+                
+                <div class="compare-doc-select" id="compareDocSelect"></div>
+                
+                <div class="compare-result" id="compareResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

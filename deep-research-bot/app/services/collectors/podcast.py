@@ -166,3 +166,4 @@ class PodcastCollector(BaseCollector):
                 return feed.feed.image.get("href", "")
         
         return ""
+
