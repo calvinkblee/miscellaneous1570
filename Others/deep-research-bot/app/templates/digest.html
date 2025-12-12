@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}일일 다이제스트 - Deep Research Bot{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="text-center">
+        <h1 class="text-3xl font-bold">📋 오늘의 다이제스트</h1>
+        <p class="text-gray-500 mt-2" id="digest-date"></p>
+    </div>
+    
+    <!-- Digest Content -->
+    <div class="card bg-base-100 shadow-xl" id="digest-container">
+        <div class="card-body">
+            <div class="loading-spinner mx-auto"></div>
+        </div>
+    </div>
+    
+    <!-- Top Contents -->
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title">🔥 오늘의 추천 콘텐츠</h2>
+            <div class="space-y-4 mt-4" id="top-contents">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function loadDigest() {
+        try {
+            const response = await fetch('/api/digest');
+            const data = await response.json();
+            
+            // Date
+            document.getElementById('digest-date').textContent = data.date 
+                ? new Date(data.date).toLocaleDateString('ko-KR', { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    weekday: 'long'
+                  })
+                : new Date().toLocaleDateString('ko-KR');
+            
+            // Digest text
+            const container = document.getElementById('digest-container');
+            container.innerHTML = `
+                <div class="card-body">
+                    <div class="prose max-w-none">
+                        ${formatDigestText(data.digest)}
+                    </div>
+                </div>
+            `;
+            
+            // Top contents
+            const contentsContainer = document.getElementById('top-contents');
+            contentsContainer.innerHTML = '';
+            
+            if (data.contents && data.contents.length > 0) {
+                for (const content of data.contents) {
+                    const scoreClass = getScoreClass(content.ai_share_score);
+                    const sourceIcon = getSourceIcon(content.source_type);
+                    
+                    contentsContainer.innerHTML += `
+                        <a href="/content/${content.id}" class="block p-4 rounded-lg bg-base-200 hover:bg-base-300 transition-colors">
+                            <div class="flex items-start gap-4">
+                                <span class="text-2xl">${sourceIcon}</span>
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <span class="badge ${scoreClass}">${Math.round(content.ai_share_score)}점</span>
+                                        <span class="text-sm text-gray-500">${content.source_name}</span>
+                                    </div>
+                                    <h3 class="font-semibold">${content.title}</h3>
+                                    <p class="text-sm text-gray-600 mt-1 line-clamp-2">${content.ai_summary || ''}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }
+            } else {
+                contentsContainer.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        오늘 수집된 추천 콘텐츠가 없습니다
+                    </div>
+                `;
+            }
+            
+        } catch (error) {
+            console.error('Digest loading error:', error);
+            document.getElementById('digest-container').innerHTML = `
+                <div class="card-body text-center text-error">
+                    다이제스트 로딩 실패
+                </div>
+            `;
+        }
+    }
+    
+    function formatDigestText(text) {
+        if (!text) return '<p class="text-gray-500">다이제스트를 생성할 수 없습니다.</p>';
+        
+        // Convert markdown-like formatting to HTML
+        return text
+            .replace(/\n\n/g, '</p><p>')
+            .replace(/\n/g, '<br>')
+            .replace(/^(.*)$/gm, '<p>$1</p>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/^### (.*$)/gm, '<h3 class="font-bold text-lg mt-4">$1</h3>')
+            .replace(/^## (.*$)/gm, '<h2 class="font-bold text-xl mt-4">$1</h2>')
+            .replace(/^# (.*$)/gm, '<h1 class="font-bold text-2xl mt-4">$1</h1>')
+            .replace(/^- (.*$)/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/gms, '<ul class="list-disc list-inside">$1</ul>')
+            .replace(/^(\d+)\. (.*$)/gm, '<li>$2</li>');
+    }
+    
+    function refreshData() {
+        loadDigest();
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadDigest);
+</script>
+{% endblock %}

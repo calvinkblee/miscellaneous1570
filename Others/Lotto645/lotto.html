@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 6/45 번호 생성기</title>
+    <style>
+        body {
+            font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify_content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .balls-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            min-height: 100px;
+        }
+        .ball {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            box-shadow: inset -10px -10px 20px rgba(0,0,0,0.2), 
+                        5px 5px 15px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        .ball.show {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* Ball Colors */
+        .ball-yellow { background: radial-gradient(circle at 30% 30%, #ffd700, #ffaa00); color: #333; text-shadow: none; }
+        .ball-blue { background: radial-gradient(circle at 30% 30%, #4facfe, #00f2fe); }
+        .ball-red { background: radial-gradient(circle at 30% 30%, #ff6b6b, #ee5253); }
+        .ball-gray { background: radial-gradient(circle at 30% 30%, #a4b0be, #747d8c); }
+        .ball-green { background: radial-gradient(circle at 30% 30%, #2ecc71, #26de81); }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>인생 역전! 로또 6/45</h1>
+        <div class="balls-container" id="balls-container">
+            <!-- Balls will appear here -->
+        </div>
+        <button onclick="generateNumbers()">번호 추첨하기</button>
+    </div>
+
+    <script>
+        function generateNumbers() {
+            const numbers = [];
+            while(numbers.length < 6){
+                const r = Math.floor(Math.random() * 45) + 1;
+                if(numbers.indexOf(r) === -1) numbers.push(r);
+            }
+            numbers.sort((a, b) => a - b);
+            
+            displayBalls(numbers);
+        }
+
+        function getBallColorClass(num) {
+            if (num <= 10) return 'ball-yellow';
+            if (num <= 20) return 'ball-blue';
+            if (num <= 30) return 'ball-red';
+            if (num <= 40) return 'ball-gray';
+            return 'ball-green';
+        }
+
+        function displayBalls(numbers) {
+            const container = document.getElementById('balls-container');
+            container.innerHTML = '';
+            
+            numbers.forEach((num, index) => {
+                const ball = document.createElement('div');
+                ball.className = `ball ${getBallColorClass(num)}`;
+                ball.textContent = num;
+                container.appendChild(ball);
+
+                // Animation delay
+                setTimeout(() => {
+                    ball.classList.add('show');
+                }, index * 100);
+            });
+        }
+
+        // Generate on load
+        window.onload = generateNumbers;
+    </script>
+</body>
+</html>

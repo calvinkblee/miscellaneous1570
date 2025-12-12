@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}콘텐츠 상세 - Deep Research Bot{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6" id="content-container">
+    <div class="loading-spinner mx-auto"></div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const contentId = {{ content_id }};
+    
+    async function loadContent() {
+        try {
+            const response = await fetch(`/api/contents/${contentId}`);
+            
+            if (!response.ok) {
+                throw new Error('Content not found');
+            }
+            
+            const content = await response.json();
+            renderContent(content);
+            
+        } catch (error) {
+            document.getElementById('content-container').innerHTML = `
+                <div class="text-center py-12">
+                    <p class="text-xl text-error">콘텐츠를 찾을 수 없습니다</p>
+                    <a href="/contents" class="btn btn-primary mt-4">목록으로</a>
+                </div>
+            `;
+        }
+    }
+    
+    function renderContent(content) {
+        const container = document.getElementById('content-container');
+        const scoreClass = getScoreClass(content.ai_share_score);
+        const sourceIcon = getSourceIcon(content.source_type);
+        const languageFlag = content.language === 'ko' ? '🇰🇷' : '🇺🇸';
+        
+        // Insights list
+        let insightsHtml = '';
+        if (content.ai_insights && content.ai_insights.length > 0) {
+            insightsHtml = content.ai_insights.map(i => `
+                <li class="flex items-start gap-2">
+                    <span class="text-primary">💡</span>
+                    <span>${i}</span>
+                </li>
+            `).join('');
+        }
+        
+        container.innerHTML = `
+            <!-- Back Button -->
+            <a href="/contents" class="btn btn-ghost btn-sm gap-2">
+                ← 목록으로
+            </a>
+            
+            <!-- Main Card -->
+            <div class="card bg-base-100 shadow-xl">
+                ${content.thumbnail_url ? `
+                    <figure>
+                        <img src="${content.thumbnail_url}" alt="" class="w-full h-64 object-cover">
+                    </figure>
+                ` : ''}
+                
+                <div class="card-body">
+                    <!-- Header -->
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        <span class="text-2xl">${sourceIcon}</span>
+                        <span class="badge ${scoreClass} badge-lg">${Math.round(content.ai_share_score)}점</span>
+                        <span class="badge badge-outline">${languageFlag} ${content.language === 'ko' ? '한국어' : 'English'}</span>
+                        <span class="badge badge-outline">${content.keyword_name}</span>
+                        <span class="badge badge-outline">${content.source_name}</span>
+                    </div>
+                    
+                    <h1 class="text-2xl font-bold">${content.title}</h1>
+                    
+                    <p class="text-gray-500">${formatDate(content.published_at)}</p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-2 my-4">
+                        <a href="${content.url}" target="_blank" class="btn btn-primary">
+                            원문 보기 ↗
+                        </a>
+                        <button class="btn ${content.is_starred ? 'btn-warning' : 'btn-outline'}" onclick="toggleStar()">
+                            ${content.is_starred ? '⭐ 즐겨찾기됨' : '☆ 즐겨찾기'}
+                        </button>
+                        <button class="btn ${content.is_shared ? 'btn-success' : 'btn-outline'}" onclick="markShared()">
+                            ${content.is_shared ? '✓ 공유 완료' : '📤 공유 완료 표시'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Analysis -->
+            <div class="card bg-base-100 shadow-xl">
+                <div class="card-body">
+                    <h2 class="card-title">🤖 AI 분석 결과</h2>
+                    
+                    <!-- Summary -->
+                    <div class="mt-4">
+                        <h3 class="font-semibold text-lg mb-2">📝 요약</h3>
+                        <p class="text-gray-700 bg-base-200 p-4 rounded-lg">${content.ai_summary || '분석 대기 중...'}</p>
+                    </div>
+                    
+                    <!-- Insights -->
+                    ${content.ai_insights && content.ai_insights.length > 0 ? `
+                        <div class="mt-6">
+                            <h3 class="font-semibold text-lg mb-2">💡 핵심 인사이트</h3>
+                            <ul class="space-y-2 bg-base-200 p-4 rounded-lg">
+                                ${insightsHtml}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Business Relevance -->
+                    ${content.ai_business_relevance ? `
+                        <div class="mt-6">
+                            <h3 class="font-semibold text-lg mb-2">🏢 비즈니스 연관성</h3>
+                            <p class="text-gray-700 bg-base-200 p-4 rounded-lg">${content.ai_business_relevance}</p>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Share Score Explanation -->
+                    <div class="mt-6">
+                        <h3 class="font-semibold text-lg mb-2">📊 공유 가치 평가</h3>
+                        <div class="bg-base-200 p-4 rounded-lg">
+                            <div class="flex items-center gap-4 mb-2">
+                                <div class="radial-progress ${scoreClass}" style="--value:${content.ai_share_score}; --size:4rem;">
+                                    ${Math.round(content.ai_share_score)}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-lg">
+                                        ${content.ai_share_score >= 80 ? '🔥 강력 추천' : 
+                                          content.ai_share_score >= 60 ? '👍 추천' : 
+                                          content.ai_share_score >= 40 ? '📌 참고' : '📎 선택적'}
+                                    </p>
+                                    <p class="text-gray-600">${content.ai_share_reason || ''}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Original Description -->
+            ${content.description ? `
+                <div class="card bg-base-100 shadow-xl">
+                    <div class="card-body">
+                        <h2 class="card-title">📄 원본 설명</h2>
+                        <p class="text-gray-700 whitespace-pre-wrap">${content.description}</p>
+                    </div>
+                </div>
+            ` : ''}
+        `;
+    }
+    
+    async function toggleStar() {
+        try {
+            const response = await fetch(`/api/contents/${contentId}/star`, { method: 'POST' });
+            if (response.ok) {
+                loadContent();
+                showToast('즐겨찾기 상태 변경됨', 'success');
+            }
+        } catch (error) {
+            showToast('오류 발생', 'error');
+        }
+    }
+    
+    async function markShared() {
+        try {
+            const response = await fetch(`/api/contents/${contentId}/share`, { method: 'POST' });
+            if (response.ok) {
+                loadContent();
+                showToast('공유 완료로 표시됨', 'success');
+            }
+        } catch (error) {
+            showToast('오류 발생', 'error');
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadContent);
+</script>
+{% endblock %}

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>간단한 계산기</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .calculator {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 320px;
+        }
+
+        .display {
+            width: 100%;
+            height: 80px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 20px;
+            box-sizing: border-box;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            overflow-x: auto;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+
+        button {
+            padding: 20px;
+            font-size: 1.25rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        /* 숫자 버튼 */
+        .btn-number {
+            background-color: #f1f3f5;
+            color: #212529;
+        }
+        .btn-number:hover {
+            background-color: #e9ecef;
+        }
+
+        /* 연산자 버튼 */
+        .btn-operator {
+            background-color: #ff922b;
+            color: white;
+            font-size: 1.5rem;
+        }
+        .btn-operator:hover {
+            background-color: #fd7e14;
+        }
+
+        /* 기능 버튼 (AC, DEL) */
+        .btn-function {
+            background-color: #adb5bd;
+            color: white;
+        }
+        .btn-function:hover {
+            background-color: #868e96;
+        }
+
+        /* 000 버튼 특별 스타일 */
+        .btn-zero {
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator">
+    <div class="display" id="display">0</div>
+    <div class="buttons">
+        <!-- 첫 번째 줄: 기능 및 나누기 -->
+        <button class="btn-function" onclick="clearDisplay()">AC</button>
+        <button class="btn-function" onclick="deleteLast()">DEL</button>
+        <button class="btn-operator" onclick="inputOperator('%')">%</button>
+        <button class="btn-operator" onclick="inputOperator('/')">÷</button>
+
+        <!-- 두 번째 줄: 7, 8, 9, 곱하기 -->
+        <button class="btn-number" onclick="inputNumber('7')">7</button>
+        <button class="btn-number" onclick="inputNumber('8')">8</button>
+        <button class="btn-number" onclick="inputNumber('9')">9</button>
+        <button class="btn-operator" onclick="inputOperator('*')">×</button>
+
+        <!-- 세 번째 줄: 4, 5, 6, 빼기 -->
+        <button class="btn-number" onclick="inputNumber('4')">4</button>
+        <button class="btn-number" onclick="inputNumber('5')">5</button>
+        <button class="btn-number" onclick="inputNumber('6')">6</button>
+        <button class="btn-operator" onclick="inputOperator('-')">−</button>
+
+        <!-- 네 번째 줄: 1, 2, 3, 더하기 -->
+        <button class="btn-number" onclick="inputNumber('1')">1</button>
+        <button class="btn-number" onclick="inputNumber('2')">2</button>
+        <button class="btn-number" onclick="inputNumber('3')">3</button>
+        <button class="btn-operator" onclick="inputOperator('+')">+</button>
+
+        <!-- 다섯 번째 줄: 0, 000, ., = -->
+        <button class="btn-number" onclick="inputNumber('0')">0</button>
+        <button class="btn-number btn-zero" onclick="input000()">000</button>
+        <button class="btn-number" onclick="inputNumber('.')">.</button>
+        <button class="btn-operator" onclick="calculate()">=</button>
+    </div>
+</div>
+
+<script>
+    const display = document.getElementById('display');
+    let currentInput = '0';
+    let isResultDisplayed = false;
+
+    function updateDisplay() {
+        display.innerText = currentInput;
+        display.scrollLeft = display.scrollWidth; // 항상 오른쪽 끝을 보여줌
+    }
+
+    function inputNumber(num) {
+        if (currentInput === '0' || isResultDisplayed) {
+            currentInput = num;
+            isResultDisplayed = false;
+        } else {
+            currentInput += num;
+        }
+        updateDisplay();
+    }
+
+    function input000() {
+        if (currentInput === '0' || isResultDisplayed) {
+            currentInput = '0'; // 0일 때 000을 누르면 그냥 0 유지
+            isResultDisplayed = false;
+        } else {
+            currentInput += '000';
+        }
+        updateDisplay();
+    }
+
+    function inputOperator(operator) {
+        const lastChar = currentInput.slice(-1);
+        const operators = ['+', '-', '*', '/', '%', '.'];
+        
+        // 마지막 글자가 연산자라면 교체
+        if (operators.includes(lastChar)) {
+            currentInput = currentInput.slice(0, -1) + operator;
+        } else {
+            currentInput += operator;
+        }
+        isResultDisplayed = false;
+        updateDisplay();
+    }
+
+    function clearDisplay() {
+        currentInput = '0';
+        isResultDisplayed = false;
+        updateDisplay();
+    }
+
+    function deleteLast() {
+        if (isResultDisplayed) {
+            clearDisplay();
+            return;
+        }
+        if (currentInput.length === 1) {
+            currentInput = '0';
+        } else {
+            currentInput = currentInput.slice(0, -1);
+        }
+        updateDisplay();
+    }
+
+    function calculate() {
+        try {
+            // eval은 간단한 계산기 구현에 유용하지만, 실제 서비스에서는 보안에 주의해야 함
+            // 여기서는 사용자가 버튼으로만 입력하므로 안전하다고 가정
+            let result = eval(currentInput);
+            
+            // 소수점 처리 (필요시)
+            if (!Number.isInteger(result)) {
+                result = parseFloat(result.toFixed(8)); // 소수점 8자리까지 제한 후 불필요한 0 제거
+            }
+
+            currentInput = result.toString();
+            isResultDisplayed = true;
+        } catch (e) {
+            currentInput = 'Error';
+            isResultDisplayed = true;
+        }
+        updateDisplay();
+    }
+</script>
+</body>
+</html>
